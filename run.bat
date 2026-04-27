@@ -1,9 +1,5 @@
 @echo off
-chcp 65001 >nul 2>&1
 title Douyin Downloader v1.2.4
-
-:: 设置 UTF-8 编码输出
-python -c "import sys; sys.stdout.reconfigure(encoding='utf-8')" 2>nul
 
 echo ========================================
 echo   抖音视频下载器 v1.2.4
@@ -24,6 +20,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
+:: 检查 Python 版本
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYVER=%%i
 echo [OK] Python 已安装：%PYVER%
 
