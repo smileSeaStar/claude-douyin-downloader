@@ -1,4 +1,5 @@
 @echo off
+REM Fix encoding: GBK for Windows compatibility
 setlocal enabledelayedexpansion
 title Douyin Downloader v1.2.4
 
