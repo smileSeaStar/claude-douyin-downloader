@@ -1,13 +1,19 @@
 @echo off
-setlocal enabledelayedexpansion
+chcp 65001 >nul 2>&1
 title Douyin Downloader v1.2.4
 
-:: 检查 Python 是否安装
+:: 设置 UTF-8 编码输出
+python -c "import sys; sys.stdout.reconfigure(encoding='utf-8')" 2>nul
+
+echo ========================================
+echo   抖音视频下载器 v1.2.4
+echo ========================================
+echo.
+
+:: 检查 Python
 where python >nul 2>&1
 if errorlevel 1 (
-    echo ========================================
     echo [ERROR] Python 未找到
-    echo ========================================
     echo.
     echo 请先安装 Python 3.8 或更高版本
     echo 下载地址：https://www.python.org/downloads/
@@ -18,17 +24,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: 检查 Python 版本
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYVER=%%i
-echo [OK] Python 已安装：!PYVER!
+echo [OK] Python 已安装：%PYVER%
 
-:: 检查依赖是否已安装
+:: 检查依赖
+echo.
 python -c "import playwright" 2>nul
 if errorlevel 1 (
-    echo.
-    echo ========================================
     echo [INFO] 正在安装依赖...
-    echo ========================================
     pip install -r "%~dp0requirements.txt"
     if errorlevel 1 (
         echo [ERROR] 依赖安装失败
@@ -39,23 +42,20 @@ if errorlevel 1 (
     echo [OK] 依赖已安装
 )
 
-:: 检查浏览器是否已安装
+:: 检查浏览器
 playwright install chromium 2>nul
 if errorlevel 1 (
-    echo.
-    echo ========================================
     echo [INFO] 正在安装 Chromium 浏览器...
-    echo ========================================
     playwright install chromium
 )
 
 echo.
 echo ========================================
-echo 启动成功！
+echo   启动成功！
 echo ========================================
 echo.
 
-:: 启动图形界面
+:: 启动 GUI
 python "%~dp0gui_launcher.py"
 
 if errorlevel 1 (
