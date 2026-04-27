@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 title Douyin Downloader v1.2.4
 
 echo ========================================
@@ -14,7 +14,7 @@ if errorlevel 1 (
     echo 请先安装 Python 3.8 或更高版本
     echo 下载地址：https://www.python.org/downloads/
     echo.
-    echo 安装时请务必勾选 "Add Python to PATH" 选项
+    echo 安装时请务必勾选 Add Python to PATH 选项
     echo.
     pause
     exit /b 1
