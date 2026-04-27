@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 title Douyin Downloader v1.2.4
 
 echo ========================================
@@ -20,18 +20,21 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: 检查 Python 版本
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYVER=%%i
 echo [OK] Python 已安装：%PYVER%
 
-:: 检查依赖
+:: 检查并安装依赖
 echo.
+echo 检查依赖包...
 python -c "import playwright" 2>nul
 if errorlevel 1 (
-    echo [INFO] 正在安装依赖...
+    echo [INFO] 正在安装依赖包...
     pip install -r "%~dp0requirements.txt"
     if errorlevel 1 (
         echo [ERROR] 依赖安装失败
+        echo.
+        echo 请手动运行：pip install -r requirements.txt
+        echo.
         pause
         exit /b 1
     )
@@ -39,7 +42,9 @@ if errorlevel 1 (
     echo [OK] 依赖已安装
 )
 
-:: 检查浏览器
+:: 安装浏览器
+echo.
+echo 检查浏览器...
 playwright install chromium 2>nul
 if errorlevel 1 (
     echo [INFO] 正在安装 Chromium 浏览器...
