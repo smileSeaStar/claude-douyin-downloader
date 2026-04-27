@@ -10,7 +10,9 @@
       "Bash(git commit:*)",
       "Bash(python:*)",
       "Bash(powershell:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(cmd.exe /c \"D:\\\\tools\\\\test\\\\claude-douyin-downloader\\\\run.bat\")",
+      "Bash(powershell.exe -Command \"& 'D:\\\\tools\\\\test\\\\claude-douyin-downloader\\\\run.bat'\")"
     ]
   }
 }
