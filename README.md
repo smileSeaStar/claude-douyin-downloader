@@ -28,12 +28,7 @@
 ## 系统要求
 
 - Windows 10/11
-- Python 3.8 或更高版本
-
-### 没有 Python？下载地址：
-- **官方下载**：https://www.python.org/downloads/
-- **国内镜像**：https://www.python.org.cn/download/
-- **重要**：安装时务必勾选 "Add Python to PATH"
+- Python 3.8 或更高版本（首次运行会自动安装依赖）
 
 ## 功能
 

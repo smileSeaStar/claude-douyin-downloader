@@ -4,7 +4,10 @@
       "Bash(git stash:*)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m 'feat: 添加一键安装包和环境检测脚本:*)"
+      "Bash(git commit -m 'feat: 添加一键安装包和环境检测脚本:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
