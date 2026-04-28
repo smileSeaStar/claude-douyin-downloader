@@ -841,6 +841,9 @@ class DouyinDownloader:
             print("Please install openpyxl: pip install openpyxl")
             return []
 
+        # 创建报告器（Excel 模式）
+        reporter = DetectionReporter(self.output_dir, excel_mode=True) if keywords else None
+
         try:
             wb = openpyxl.load_workbook(excel_path)
             ws = wb.active
@@ -856,45 +859,47 @@ class DouyinDownloader:
                 print("[ERROR] No URLs found in Excel file")
                 return []
 
-            # 创建报告器（Excel 模式）
-            reporter = DetectionReporter(self.output_dir, excel_mode=True) if keywords else None
+            # 存储检测结果
+            detection_results = []
 
-        # 存储检测结果
-        detection_results = []
+            for i, url in enumerate(urls, 1):
+                print(f"\n[{i}/{len(urls)}]")
+                result = await self.download_one(url, filename_format, keywords, enable_speech, enable_ocr, reporter)
 
-        for i, url in enumerate(urls, 1):
-            print(f"\n[{i}/{len(urls)}]")
-            result = await self.download_one(url, filename_format, keywords, enable_speech, enable_ocr, reporter)
+                # 收集检测结果
+                if reporter and reporter.results:
+                    last_result = reporter.results[-1]
+                    detection_results.append({
+                        'url': url,
+                        'success': result is not None,
+                        'path': str(result) if result else None,
+                        'speech_keywords': last_result.get('speech_keywords', {}),
+                        'ocr_keywords': last_result.get('ocr_keywords', {}),
+                        'full_speech': last_result.get('full_speech', ''),
+                        'full_ocr': last_result.get('full_ocr', '')
+                    })
+                else:
+                    detection_results.append({
+                        'url': url,
+                        'success': result is not None,
+                        'path': str(result) if result else None,
+                        'speech_keywords': {},
+                        'ocr_keywords': {},
+                        'full_speech': '',
+                        'full_ocr': ''
+                    })
 
-            # 收集检测结果
-            if reporter and reporter.results:
-                last_result = reporter.results[-1]
-                detection_results.append({
-                    'url': url,
-                    'success': result is not None,
-                    'path': str(result) if result else None,
-                    'speech_keywords': last_result.get('speech_keywords', {}),
-                    'ocr_keywords': last_result.get('ocr_keywords', {}),
-                    'full_speech': last_result.get('full_speech', ''),
-                    'full_ocr': last_result.get('full_ocr', '')
-                })
-            else:
-                detection_results.append({
-                    'url': url,
-                    'success': result is not None,
-                    'path': str(result) if result else None,
-                    'speech_keywords': {},
-                    'ocr_keywords': {},
-                    'full_speech': '',
-                    'full_ocr': ''
-                })
+            # Excel 模式：写入结果到 Excel
+            if reporter and reporter.excel_mode:
+                self._write_results_to_excel(excel_path, detection_results)
+                print(f"\n[OK] 检测结果已写入 Excel: {excel_path}")
+            elif reporter:
+                reporter.write_summary()
 
-        # Excel 模式：写入结果到 Excel
-        if reporter and reporter.excel_mode:
-            self._write_results_to_excel(excel_path, detection_results)
-            print(f"\n[OK] 检测结果已写入 Excel: {excel_path}")
-        elif reporter:
-            reporter.write_summary()
+        except Exception as e:
+            print(f"[ERROR] Error processing Excel: {e}")
+        finally:
+            wb.close()
 
         return detection_results
 
