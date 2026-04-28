@@ -26,21 +26,78 @@ echo [OK] Python installed: %PYVER%
 :: Check and install dependencies
 echo.
 echo Checking dependencies...
+echo.
+
+:: Check playwright
 python -c "import playwright" 2>nul
 if errorlevel 1 (
-    echo [INFO] Installing dependencies...
-    pip install -r "%~dp0requirements.txt"
-    if errorlevel 1 (
-        echo [ERROR] Dependency installation failed
-        echo.
-        echo Please run manually: pip install -r requirements.txt
-        echo.
-        pause
-        exit /b 1
-    )
+    echo [!] playwright not found
 ) else (
-    echo [OK] Dependencies installed
+    echo [OK] playwright
 )
+
+:: Check openpyxl
+python -c "import openpyxl" 2>nul
+if errorlevel 1 (
+    echo [!] openpyxl not found
+) else (
+    echo [OK] openpyxl
+)
+
+:: Check aiohttp
+python -c "import aiohttp" 2>nul
+if errorlevel 1 (
+    echo [!] aiohttp not found
+) else (
+    echo [OK] aiohttp
+)
+
+:: Check faster-whisper
+python -c "import faster_whisper" 2>nul
+if errorlevel 1 (
+    echo [!] faster-whisper not found
+) else (
+    echo [OK] faster-whisper
+)
+
+:: Check easyocr
+python -c "import easyocr" 2>nul
+if errorlevel 1 (
+    echo [!] easyocr not found
+) else (
+    echo [OK] easyocr
+)
+
+:: Check opencv-python
+python -c "import cv2" 2>nul
+if errorlevel 1 (
+    echo [!] opencv-python not found
+) else (
+    echo [OK] opencv-python
+)
+
+:: Check opencc
+python -c "import opencc" 2>nul
+if errorlevel 1 (
+    echo [!] opencc not found
+) else (
+    echo [OK] opencc
+)
+
+echo.
+echo Installing all dependencies...
+pip install -r "%~dp0requirements.txt"
+
+if errorlevel 1 (
+    echo [ERROR] Dependency installation failed
+    echo.
+    echo Please run manually: pip install -r requirements.txt
+    echo.
+    pause
+    exit /b 1
+)
+
+echo [OK] All dependencies installed
 
 echo.
 echo ========================================
