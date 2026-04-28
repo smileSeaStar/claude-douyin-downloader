@@ -831,22 +831,33 @@ class DouyinDownloader:
     async def download_from_excel(self, excel_path: str, filename_format: str = "{title}",
                                   keywords: List[str] = None, enable_speech: bool = True, enable_ocr: bool = True) -> list:
         """从 Excel 文件批量下载视频"""
-        if openpyxl is None:
-            print("请先安装 openpyxl: pip install openpyxl")
+        print(f"Loading Excel file: {excel_path}")
+
+        if not os.path.exists(excel_path):
+            print(f"[ERROR] Excel file not found: {excel_path}")
             return []
 
-        wb = openpyxl.load_workbook(excel_path)
-        ws = wb.active
+        if openpyxl is None:
+            print("Please install openpyxl: pip install openpyxl")
+            return []
 
-        urls = []
-        for row in ws.iter_rows(min_row=2, max_col=1, values_only=True):
-            if row[0]:
-                urls.append(str(row[0]).strip())
+        try:
+            wb = openpyxl.load_workbook(excel_path)
+            ws = wb.active
 
-        print(f"从 Excel 读取到 {len(urls)} 个链接")
+            urls = []
+            for row in ws.iter_rows(min_row=2, max_col=1, values_only=True):
+                if row[0]:
+                    urls.append(str(row[0]).strip())
 
-        # 创建报告器（Excel 模式）
-        reporter = DetectionReporter(self.output_dir, excel_mode=True) if keywords else None
+            print(f"Read {len(urls)} URLs from Excel")
+
+            if not urls:
+                print("[ERROR] No URLs found in Excel file")
+                return []
+
+            # 创建报告器（Excel 模式）
+            reporter = DetectionReporter(self.output_dir, excel_mode=True) if keywords else None
 
         # 存储检测结果
         detection_results = []

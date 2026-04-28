@@ -283,6 +283,8 @@ class DouyinDownloaderGUI:
             if not excel_path:
                 messagebox.showerror("错误", "请选择 Excel 文件")
                 return
+            # Convert to absolute path and handle spaces
+            excel_path = os.path.abspath(excel_path)
             cmd.extend(["-e", excel_path])
 
         elif mode == "detect":
@@ -301,6 +303,8 @@ class DouyinDownloaderGUI:
             if not keywords:
                 messagebox.showerror("错误", "请输入检测关键词")
                 return
+            # Convert to absolute path and handle spaces
+            excel_path = os.path.abspath(excel_path)
             cmd.extend(["-e", excel_path, "--detect", keywords])
 
         # 禁用按钮
