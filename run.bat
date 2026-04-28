@@ -92,6 +92,10 @@ if errorlevel 1 (
 echo [OK] All dependencies installed
 
 echo.
+echo Installing Chromium browser...
+playwright install chromium
+
+echo.
 echo ========================================
 echo   Launching...
 echo ========================================
