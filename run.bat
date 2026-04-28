@@ -2,66 +2,57 @@
 title Douyin Downloader v1.2.4
 
 echo ========================================
-echo   抖音视频下载器 v1.2.4
+echo   Douyin Video Downloader v1.2.4
 echo ========================================
 echo.
 
-:: 检查 Python
+:: Check Python
 where python >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Python 未找到
+    echo [ERROR] Python not found
     echo.
-    echo 请先安装 Python 3.8 或更高版本
-    echo 下载地址：https://www.python.org/downloads/
+    echo Please install Python 3.8 or higher
+    echo Download: https://www.python.org/downloads/
     echo.
-    echo 安装时请务必勾选 Add Python to PATH 选项
+    echo IMPORTANT: Check "Add Python to PATH" during installation
     echo.
     pause
     exit /b 1
 )
 
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYVER=%%i
-echo [OK] Python 已安装：%PYVER%
+echo [OK] Python installed: %PYVER%
 
-:: 检查并安装依赖
+:: Check and install dependencies
 echo.
-echo 检查依赖包...
+echo Checking dependencies...
 python -c "import playwright" 2>nul
 if errorlevel 1 (
-    echo [INFO] 正在安装依赖包...
+    echo [INFO] Installing dependencies...
     pip install -r "%~dp0requirements.txt"
     if errorlevel 1 (
-        echo [ERROR] 依赖安装失败
+        echo [ERROR] Dependency installation failed
         echo.
-        echo 请手动运行：pip install -r requirements.txt
+        echo Please run manually: pip install -r requirements.txt
         echo.
         pause
         exit /b 1
     )
 ) else (
-    echo [OK] 依赖已安装
-)
-
-:: 安装浏览器
-echo.
-echo 检查浏览器...
-playwright install chromium 2>nul
-if errorlevel 1 (
-    echo [INFO] 正在安装 Chromium 浏览器...
-    playwright install chromium
+    echo [OK] Dependencies installed
 )
 
 echo.
 echo ========================================
-echo   启动成功！
+echo   Launching...
 echo ========================================
 echo.
 
-:: 启动 GUI
+:: Launch GUI
 python "%~dp0gui_launcher.py"
 
 if errorlevel 1 (
     echo.
-    echo [ERROR] 程序运行出错
+    echo [ERROR] Program error
     pause
 )
