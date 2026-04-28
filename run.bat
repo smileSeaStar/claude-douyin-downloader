@@ -76,14 +76,6 @@ if errorlevel 1 (
     echo [OK] opencv-python
 )
 
-:: Check opencc
-python -c "import opencc" 2>nul
-if errorlevel 1 (
-    echo [!] opencc not found
-) else (
-    echo [OK] opencc
-)
-
 echo.
 echo Installing all dependencies...
 pip install -r "%~dp0requirements.txt"
