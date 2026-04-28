@@ -26,7 +26,7 @@ if sys.platform == 'win32':
 class DouyinDownloaderGUI:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("抖音视频下载器 v1.2.3")
+        self.root.title("抖音视频下载器 v1.2.4")
         self.root.geometry("550x620")
         self.root.resizable(False, False)
 
@@ -37,7 +37,25 @@ class DouyinDownloaderGUI:
         # 下载目录
         self.download_dir = self.script_dir / "downloads"
 
+        # 检查浏览器是否已安装
+        self.check_browser()
+
         self.setup_ui()
+
+    def check_browser(self):
+        """检查浏览器是否已安装"""
+        try:
+            import playwright
+            from playwright.sync_api import sync_playwright
+
+            with sync_playwright() as p:
+                try:
+                    p.chromium.launch(headless=True)
+                except Exception as e:
+                    print("Browser not installed, installing...")
+                    p.chromium.install()
+        except ImportError:
+            print("Playwright not installed")
 
     def setup_ui(self):
         """设置界面"""
