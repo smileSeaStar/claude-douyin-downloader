@@ -26,8 +26,8 @@ if sys.platform == 'win32':
 class DouyinDownloaderGUI:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("抖音视频下载器 v1.2.4")
-        self.root.geometry("550x620")
+        self.root.title("抖音视频下载器 v1.3.0")
+        self.root.geometry("550x680")
         self.root.resizable(False, False)
 
         # 获取脚本目录
@@ -36,6 +36,7 @@ class DouyinDownloaderGUI:
 
         # 下载目录
         self.download_dir = self.script_dir / "downloads"
+        self.custom_download_dir = None  # 自定义下载目录
 
         # 检查浏览器是否已安装
         self.check_browser()
@@ -66,7 +67,7 @@ class DouyinDownloaderGUI:
 
         title_label = tk.Label(
             title_frame,
-            text="🎵 抖音视频下载器 v1.2.3",
+            text="🎵 抖音视频下载器 v1.3.0",
             font=("Microsoft YaHei", 14, "bold"),
             bg="#FF2C55",
             fg="white"
@@ -126,6 +127,18 @@ class DouyinDownloaderGUI:
         self.keyword_label = tk.Label(self.input_frame, text="检测关键词（逗号分隔）：", font=("Microsoft YaHei", 9))
         self.keyword_entry = tk.Entry(self.input_frame, font=("Microsoft YaHei", 10), width=50)
         self.keyword_entry.insert(0, "抖音,广告")
+
+        # 下载路径选择
+        self.download_path_label = tk.Label(self.input_frame, text="下载路径：", font=("Microsoft YaHei", 9))
+        self.download_path_var = tk.StringVar(value=str(self.download_dir))
+        self.download_path_entry = tk.Entry(self.input_frame, textvariable=self.download_path_var, font=("Microsoft YaHei", 10), width=38)
+        self.download_browse_btn = tk.Button(
+            self.input_frame,
+            text="浏览...",
+            command=self.browse_download_path,
+            font=("Microsoft YaHei", 9),
+            width=8
+        )
 
         # 初始化显示
         self.on_mode_change()
@@ -205,24 +218,35 @@ class DouyinDownloaderGUI:
         self.browse_btn.pack_forget()
         self.keyword_label.pack_forget()
         self.keyword_entry.pack_forget()
+        self.download_path_label.pack_forget()
+        self.download_path_entry.pack_forget()
+        self.download_browse_btn.pack_forget()
 
         # 根据模式显示对应的输入控件
         if mode == "single":
             self.url_label.pack(anchor=tk.W, padx=10, pady=(10, 0))
             self.url_entry.pack(fill=tk.X, padx=10, pady=(0, 10))
+            self.download_path_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
+            self.download_path_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
+            self.download_browse_btn.pack(anchor=tk.E, padx=10)
 
         elif mode == "batch":
             self.excel_label.pack(anchor=tk.W, padx=10, pady=(10, 0))
-            excel_row = tk.Frame(self.input_frame)
-            excel_row.pack(fill=tk.X, padx=10, pady=(0, 10))
-            self.excel_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-            self.browse_btn.pack(side=tk.LEFT, padx=(5, 0))
+            self.excel_entry.pack(fill=tk.X, padx=10, pady=(0, 10))
+            self.browse_btn.pack(anchor=tk.E, padx=10)
+
+            self.download_path_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
+            self.download_path_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
+            self.download_browse_btn.pack(anchor=tk.E, padx=10)
 
         elif mode == "detect":
             self.url_label.pack(anchor=tk.W, padx=10, pady=(10, 0))
             self.url_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
             self.keyword_label.pack(anchor=tk.W, padx=10)
-            self.keyword_entry.pack(fill=tk.X, padx=10, pady=(0, 10))
+            self.keyword_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
+            self.download_path_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
+            self.download_path_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
+            self.download_browse_btn.pack(anchor=tk.E, padx=10)
 
         elif mode == "batch_detect":
             self.excel_label.pack(anchor=tk.W, padx=10, pady=(10, 0))
@@ -231,7 +255,10 @@ class DouyinDownloaderGUI:
             self.excel_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
             self.browse_btn.pack(side=tk.LEFT, padx=(5, 0))
             self.keyword_label.pack(anchor=tk.W, padx=10)
-            self.keyword_entry.pack(fill=tk.X, padx=10, pady=(0, 10))
+            self.keyword_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
+            self.download_path_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
+            self.download_path_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
+            self.download_browse_btn.pack(anchor=tk.E, padx=10)
 
     def browse_excel(self):
         """浏览选择 Excel 文件"""
@@ -241,6 +268,15 @@ class DouyinDownloaderGUI:
         )
         if file_path:
             self.excel_path_var.set(file_path)
+
+    def browse_download_path(self):
+        """浏览选择下载路径"""
+        dir_path = filedialog.askdirectory(
+            title="选择下载目录"
+        )
+        if dir_path:
+            self.download_path_var.set(dir_path)
+            self.custom_download_dir = Path(dir_path)
 
     def view_detection_logs(self):
         """查看识别日志"""
@@ -275,9 +311,11 @@ class DouyinDownloaderGUI:
 
     def open_download_dir(self):
         """打开下载目录"""
-        if not self.download_dir.exists():
-            self.download_dir.mkdir(parents=True)
-        os.startfile(self.download_dir)
+        # 使用自定义目录或默认目录
+        dir_to_open = self.custom_download_dir if self.custom_download_dir else self.download_dir
+        if not dir_to_open.exists():
+            dir_to_open.mkdir(parents=True)
+        os.startfile(dir_to_open)
 
     def start_download(self):
         """开始下载"""
@@ -288,8 +326,11 @@ class DouyinDownloaderGUI:
         excel_path = self.excel_path_var.get().strip()
         keywords = self.keyword_entry.get().strip()
 
+        # 确定输出目录
+        output_dir = str(self.custom_download_dir) if self.custom_download_dir else str(self.download_dir)
+
         # 构建命令
-        cmd = [sys.executable, str(self.main_script)]
+        cmd = [sys.executable, str(self.main_script), "-o", output_dir]
 
         if mode == "single":
             if not url:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-抖音视频无水印下载器 v1.2.4
+抖音视频无水印下载器 v1.3.0
 支持单个视频下载、Excel 批量下载、关键词检测（语音+字幕OCR）
 """
 
@@ -410,6 +410,32 @@ class DouyinDownloader:
 
     def parse_url(self, url: str) -> Optional[str]:
         """从 URL 中提取视频 ID"""
+        # 先提取纯 URL，忽略周围的文本描述
+        # 提取所有可能的 URL
+        url_match = re.search(r'(https?://[^\s]+)', url)
+        if url_match:
+            url = url_match.group(1)
+            print(f"  [INFO] 提取到 URL: {url}")
+
+        # 短链接处理
+        short_link_match = re.search(r'https?://v\.douyin\.com/([\w\-]+)', url)
+        if short_link_match:
+            short_link = short_link_match.group(0)
+            print(f"  [INFO] 检测到短链接，尝试解析...")
+            try:
+                import requests
+                # 确保短链接以 / 结尾
+                if not short_link.endswith('/'):
+                    short_link = short_link + '/'
+                response = requests.get(short_link, allow_redirects=True, timeout=10)
+                if response.url:
+                    long_url = response.url
+                    print(f"  [INFO] 短链接已解析为: {long_url}")
+                    # 在重定向后的 URL 中查找视频 ID
+                    return self.parse_url(long_url)
+            except Exception as e:
+                print(f"  [WARN] 短链接解析失败: {e}")
+
         # 标准视频链接
         match = re.search(r'/video/(\d+)', url)
         if match:
@@ -422,6 +448,11 @@ class DouyinDownloader:
 
         # 搜索页面/精选页面链接 (modal_id 参数)
         match = re.search(r'modal_id=(\d+)', url)
+        if match:
+            return match.group(1)
+
+        # aweme_id 参数（某些重定向可能直接使用 aweme_id）
+        match = re.search(r'aweme_id=(\d+)', url)
         if match:
             return match.group(1)
 
@@ -742,6 +773,12 @@ class DouyinDownloader:
         """下载单个视频"""
         print(f"正在处理: {url}")
 
+        # 处理短链接
+        video_id = self.parse_url(url)
+        if video_id:
+            url = f"https://www.douyin.com/video/{video_id}"
+            print(f"  [INFO] 转换为完整链接: {url}")
+
         # 转换 URL（用于生成文件名）
         modal_match = re.search(r'modal_id=(\d+)', url)
         if modal_match and '/video/' not in url:
@@ -842,16 +879,21 @@ class DouyinDownloader:
             return []
 
         # 创建报告器（Excel 模式）
-        reporter = DetectionReporter(self.output_dir, excel_mode=True) if keywords else None
+        # 即使没有关键词，也要创建报告器来记录下载结果
+        reporter = DetectionReporter(self.output_dir, excel_mode=True)
 
         try:
             wb = openpyxl.load_workbook(excel_path)
             ws = wb.active
 
+            # 读取 A 列链接，同时读取 B 列现有内容
             urls = []
-            for row in ws.iter_rows(min_row=2, max_col=1, values_only=True):
-                if row[0]:
-                    urls.append(str(row[0]).strip())
+            for row in ws.iter_rows(min_row=2, max_col=2, values_only=True):
+                if row[0]:  # A 列有链接
+                    urls.append({
+                        'url': str(row[0]).strip(),
+                        'existing_content': row[1] if row[1] else ''  # B 列现有内容
+                    })
 
             print(f"Read {len(urls)} URLs from Excel")
 
@@ -862,7 +904,9 @@ class DouyinDownloader:
             # 存储检测结果
             detection_results = []
 
-            for i, url in enumerate(urls, 1):
+            for i, url_item in enumerate(urls, 1):
+                url = url_item['url']
+                existing_content = url_item['existing_content']
                 print(f"\n[{i}/{len(urls)}]")
                 result = await self.download_one(url, filename_format, keywords, enable_speech, enable_ocr, reporter)
 
@@ -891,6 +935,9 @@ class DouyinDownloader:
 
             # Excel 模式：写入结果到 Excel
             if reporter and reporter.excel_mode:
+                # 标记为检测模式
+                for r in detection_results:
+                    r['is_detection'] = True
                 self._write_results_to_excel(excel_path, detection_results)
                 print(f"\n[OK] 检测结果已写入 Excel: {excel_path}")
             elif reporter:
@@ -913,9 +960,13 @@ class DouyinDownloader:
             wb = openpyxl.load_workbook(excel_path)
             ws = wb.active
 
-            # 在第 2 列添加标题（如果不存在）
-            if ws['B1'] != '检测结果':
-                ws['B1'] = '检测结果'
+            # 清空 B 列现有内容（保留标题）
+            for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=2, max_col=2):
+                for cell in row:
+                    cell.value = None
+
+            # 在第 2 列添加标题
+            ws['B1'] = '下载结果'
 
             for idx, result in enumerate(results, start=2):
                 url = result['url']
@@ -925,21 +976,32 @@ class DouyinDownloader:
                 # 构建检测结果文本
                 detection_text = ""
 
+                # 下载结果
+                if result['success']:
+                    detection_text += f"✓ 下载成功"
+                    if result['path']:
+                        detection_text += f"\x0a  路径: {result['path']}"
+                else:
+                    detection_text += f"✗ 下载失败"
+
                 # 语音关键词
                 if speech_kw:
+                    detection_text += "\x0a\x0a[语音检测]:\x0a"
                     for kw, occurrences in speech_kw.items():
+                        detection_text += f"  \"{kw}\": {len(occurrences)} 次\x0a"
                         for occ in occurrences:
-                            detection_text += f"[语音] {kw} @ {occ['timestamp']}: {occ['text'][:30]}\n"
+                            detection_text += f"    - {occ['timestamp']}: {occ['text'][:30]}\x0a"
 
                 # OCR 关键词
                 if ocr_kw:
+                    detection_text += "\x0a[字幕检测]:\x0a"
                     for kw, occurrences in ocr_kw.items():
+                        detection_text += f"  \"{kw}\": {len(occurrences)} 次\x0a"
                         for occ in occurrences:
-                            detection_text += f"[字幕] {kw} @ {occ['timestamp']}: {occ['text'][:30]}\n"
+                            detection_text += f"    - {occ['timestamp']}: {occ['text'][:30]}\x0a"
 
-                # 如果没有检测到关键词
-                if not detection_text:
-                    detection_text = "未发现关键词"
+                if not speech_kw and not ocr_kw:
+                    detection_text += "\x0a未发现关键词"
 
                 # 写入 Excel（第 2 列）
                 ws[f'B{idx}'] = detection_text
@@ -956,59 +1018,10 @@ class DouyinDownloader:
             backup_path = excel_path.rsplit('.', 1)[0] + "_results.xlsx"
             self._write_results_to_backup_excel(excel_path, backup_path, results)
 
-    def _write_results_to_backup_excel(self, original_path: str, backup_path: str, results: list):
-        """将检测结果写入备份 Excel 文件"""
-        if openpyxl is None:
-            print("[ERROR] openpyxl 未安装")
-            return
-
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "检测结果"
-
-        # 写入标题
-        ws['A1'] = '原始文件'
-        ws['B1'] = 'URL'
-        ws['C1'] = '检测结果'
-        ws['D1'] = '语音关键词'
-        ws['E1'] = '字幕关键词'
-
-        # 写入数据
-        for idx, result in enumerate(results, start=2):
-            ws[f'A{idx}'] = original_path
-            ws[f'B{idx}'] = result['url']
-
-            # 构建检测结果文本
-            detection_text = ""
-            speech_kw = result.get('speech_keywords', {})
-            ocr_kw = result.get('ocr_keywords', {})
-
-            if speech_kw:
-                for kw, occurrences in speech_kw.items():
-                    for occ in occurrences:
-                        detection_text += f"[语音] {kw} @ {occ['timestamp']}: {occ['text'][:30]}\n"
-
-            if ocr_kw:
-                for kw, occurrences in ocr_kw.items():
-                    for occ in occurrences:
-                        detection_text += f"[字幕] {kw} @ {occ['timestamp']}: {occ['text'][:30]}\n"
-
-            if not detection_text:
-                detection_text = "未发现关键词"
-
-            ws[f'C{idx}'] = detection_text
-
-            # 单独列出关键词
-            all_keywords = set(speech_kw.keys()) | set(ocr_kw.keys())
-            ws[f'D{idx}'] = ', '.join(all_keywords) if all_keywords else '-'
-
-        wb.save(backup_path)
-        print(f"[OK] 检测结果已保存到备份文件：{backup_path}")
-
 
 async def main():
     parser = argparse.ArgumentParser(
-        description='抖音视频无水印下载器 v1.2.4',
+        description='抖音视频无水印下载器 v1.3.0',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 示例:
@@ -1086,3 +1099,4 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
+
