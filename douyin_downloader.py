@@ -801,14 +801,20 @@ class DouyinDownloader:
             print(f"  [X] 下载失败")
             return None
 
-        # 生成正式文件名
+        # 生成正式文件名（带序号）
         title = self.get_video_title(video_info)
         author = self.get_author_name(video_info)
         video_id = self.get_video_id(video_info)
 
         filename = filename_format.format(title=title, author=author, id=video_id)
         filename = re.sub(r'[<>:"/\\|?*]', '', filename)
-        output_path = self.output_dir / f"{filename}.mp4"
+
+        # 添加序号前缀避免文件名冲突
+        counter = 1
+        output_path = self.output_dir / f"{counter}_{filename}.mp4"
+        while output_path.exists():
+            counter += 1
+            output_path = self.output_dir / f"{counter}_{filename}.mp4"
 
         # 检查是否已存在
         if output_path.exists():

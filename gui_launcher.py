@@ -26,8 +26,8 @@ if sys.platform == 'win32':
 class DouyinDownloaderGUI:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("抖音视频下载器 v1.3.0")
-        self.root.geometry("550x680")
+        self.root.title("抖音视频下载器 v1.4.0")
+        self.root.geometry("550x720")
         self.root.resizable(False, False)
 
         # 获取脚本目录
@@ -67,7 +67,7 @@ class DouyinDownloaderGUI:
 
         title_label = tk.Label(
             title_frame,
-            text="🎵 抖音视频下载器 v1.3.0",
+            text="🎵 抖音视频下载器 v1.4.0",
             font=("Microsoft YaHei", 14, "bold"),
             bg="#FF2C55",
             fg="white"
@@ -127,6 +127,23 @@ class DouyinDownloaderGUI:
         self.keyword_label = tk.Label(self.input_frame, text="检测关键词（逗号分隔）：", font=("Microsoft YaHei", 9))
         self.keyword_entry = tk.Entry(self.input_frame, font=("Microsoft YaHei", 10), width=50)
         self.keyword_entry.insert(0, "抖音,广告")
+
+        # 检测功能选择
+        self.enable_speech_var = tk.BooleanVar(value=True)
+        self.enable_speech_cb = tk.Checkbutton(
+            self.input_frame,
+            text="✓ 启用语音检测",
+            variable=self.enable_speech_var,
+            font=("Microsoft YaHei", 9)
+        )
+
+        self.enable_ocr_var = tk.BooleanVar(value=True)
+        self.enable_ocr_cb = tk.Checkbutton(
+            self.input_frame,
+            text="✓ 启用OCR文字检测",
+            variable=self.enable_ocr_var,
+            font=("Microsoft YaHei", 9)
+        )
 
         # 下载路径选择
         self.download_path_label = tk.Label(self.input_frame, text="下载路径：", font=("Microsoft YaHei", 9))
@@ -218,6 +235,8 @@ class DouyinDownloaderGUI:
         self.browse_btn.pack_forget()
         self.keyword_label.pack_forget()
         self.keyword_entry.pack_forget()
+        self.enable_speech_cb.pack_forget()
+        self.enable_ocr_cb.pack_forget()
         self.download_path_label.pack_forget()
         self.download_path_entry.pack_forget()
         self.download_browse_btn.pack_forget()
@@ -244,6 +263,8 @@ class DouyinDownloaderGUI:
             self.url_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
             self.keyword_label.pack(anchor=tk.W, padx=10)
             self.keyword_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
+            self.enable_speech_cb.pack(anchor=tk.W, padx=10, pady=(0, 5))
+            self.enable_ocr_cb.pack(anchor=tk.W, padx=10, pady=(0, 5))
             self.download_path_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
             self.download_path_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
             self.download_browse_btn.pack(anchor=tk.E, padx=10)
@@ -354,6 +375,11 @@ class DouyinDownloaderGUI:
                 messagebox.showerror("错误", "请输入检测关键词")
                 return
             cmd.extend([url, "--detect", keywords])
+            # 传递检测选项
+            if not self.enable_speech_var.get():
+                cmd.append("--no-speech")
+            if not self.enable_ocr_var.get():
+                cmd.append("--no-ocr")
 
         elif mode == "batch_detect":
             if not excel_path:
@@ -365,6 +391,11 @@ class DouyinDownloaderGUI:
             # Convert to absolute path and handle spaces
             excel_path = os.path.abspath(excel_path)
             cmd.extend(["-e", excel_path, "--detect", keywords])
+            # 传递检测选项
+            if not self.enable_speech_var.get():
+                cmd.append("--no-speech")
+            if not self.enable_ocr_var.get():
+                cmd.append("--no-ocr")
 
         # 禁用按钮
         self.start_btn.config(state=tk.DISABLED, text="⏳ 运行中...")
