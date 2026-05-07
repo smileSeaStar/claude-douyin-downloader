@@ -27,7 +27,7 @@ class DouyinDownloaderGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("抖音视频下载器 v1.4.0")
-        self.root.geometry("550x720")
+        self.root.geometry("550x780")
         self.root.resizable(False, False)
 
         # 获取脚本目录
@@ -277,6 +277,8 @@ class DouyinDownloaderGUI:
             self.browse_btn.pack(side=tk.LEFT, padx=(5, 0))
             self.keyword_label.pack(anchor=tk.W, padx=10)
             self.keyword_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
+            self.enable_speech_cb.pack(anchor=tk.W, padx=10, pady=(0, 5))
+            self.enable_ocr_cb.pack(anchor=tk.W, padx=10, pady=(0, 5))
             self.download_path_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
             self.download_path_entry.pack(fill=tk.X, padx=10, pady=(0, 5))
             self.download_browse_btn.pack(anchor=tk.E, padx=10)
